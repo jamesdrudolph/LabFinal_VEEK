@@ -1,24 +1,35 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QCamera>
+#include <QGraphicsScene>
 #include <QMainWindow>
 
-QT_BEGIN_NAMESPACE
-namespace Ui { class MainWindow; }
-QT_END_NAMESPACE
+#include "D8MCapture.h"
+
+using namespace cv;
+
+namespace Ui {
+class MainWindow;
+}
 
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent = nullptr);
+    explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
+
+private slots:
 
 private:
     Ui::MainWindow *ui;
-    QCamera camera;
-    bool checkCameraAvailability();
+    QGraphicsScene *qScene;
+    D8MCapture *cap;
+    char *image = NULL;
+    const int size = 800 * 480 * 4;
+
+    void nextFrame();
 };
+
 #endif // MAINWINDOW_H
