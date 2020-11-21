@@ -2,6 +2,7 @@
 #define D8MCAPTURE_H_
 
 #include <stdint.h>
+#include <opencv2/opencv.hpp>
 
 namespace cv {
 
@@ -12,8 +13,8 @@ class D8MCapture {
     bool grab();
     bool isOpened();
     bool open(uint32_t capture_base, const char *capture_ram_device);
-    bool read(char *image);
-    bool retrieve(char *image);
+    bool read(OutputArray image);
+    bool retrieve(OutputArray image);
     void release();
     virtual ~D8MCapture();
     //D8MCapture & operator>>(Mat &image);
@@ -21,6 +22,7 @@ class D8MCapture {
     private:
     bool opened;
     int mem_fd;
+    bool saved = false;
     void *h2f_lw_virtual_base;
     uint32_t *capture_controller = NULL;
     int frame_index;

@@ -1,9 +1,10 @@
+#include <iostream>
+#include <stdint.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/mman.h>
+#include <opencv2/opencv.hpp>
 #include <sys/ioctl.h>
-#include <string.h>
-#include <cstdio>
 #include "D8MCapture.h"
 
 using namespace cv;
@@ -18,19 +19,19 @@ using namespace cv;
 #define IORD(base, index)                   (*(((uint32_t *)base)+index))
 #define IOWR(base, index, data)             (*(((uint32_t *)base)+index) = data)
 
-#define REG_CONTROL					0
-#define REG_STATUS					1
-#define REG_MEM_ADDR				2
-#define REG_FRAME_DIM				3
+#define REG_CONTROL			0
+#define REG_STATUS			1
+#define REG_MEM_ADDR			2
+#define REG_FRAME_DIM			3
 #define REG_DETECTED_FRAME_DIM		4
 
 // bit mask for CONTROL
-#define CONTROL_CAPTURE_BIT			0x01
+#define CONTROL_CAPTURE_BIT		0x01
 #define CONTROL_DUMMY_DATA_BIT		0x02
 #define CONTROL_AUTO_FRAME_DIM_BIT	0x04
 
 // bit mask for STATUS
-#define STATUS_DONE_BIT				0x01
+#define STATUS_DONE_BIT			0x01
 #define STATUS_FIFO_FULL_BIT		0x02
 #define STATUS_INVALID_FRAME_BIT	0x04
 
@@ -52,7 +53,7 @@ cv::D8MCapture::~D8MCapture()
     release();
 }
 
-bool cv::D8MCapture::retrieve(char *image)
+bool cv::D8MCapture::retrieve(OutputArray image)
 {
     bool bDone = false;
     int width, height;
@@ -62,14 +63,17 @@ bool cv::D8MCapture::retrieve(char *image)
     value = IORD(capture_controller, REG_DETECTED_FRAME_DIM);
     width = (value >> 16) & 0xFFFF;
     height = value & 0xFFFF;
+    //printf("width:%d, height:%d\r\n", width, height);
     
     bDone = true;
-
+    image.create(480, 800, CV_8UC4);
+    Mat src = image.getMat();
     if (frame_index == 0) {
-        memcpy(image, capture_sdram1, width * height * 4);
+        //printf("capture_sdram1: %u\n", capture_sdram1);
+        memcpy(src.ptr(), capture_sdram1, width * height * 4);
     }
     else {
-        memcpy(image, capture_sdram2, width * height * 4);
+        memcpy(src.ptr(), capture_sdram2, width * height * 4);
     }
     return bDone;
 }
@@ -84,6 +88,7 @@ bool cv::D8MCapture::wait_done(int timeout_s)
     while (!bDone && i >= 0) {
         status = IORD(capture_controller, REG_STATUS);
         if ((status & STATUS_DONE_BIT) == STATUS_DONE_BIT) {
+            //printf("done, status=%xh\r\n", status);
             bDone = true;
         }
         usleep(100);
@@ -126,7 +131,7 @@ void cv::D8MCapture::start_capture()
     IOWR(capture_controller, REG_CONTROL, Command);
 }
 
-bool cv::D8MCapture::read(char *image)
+bool cv::D8MCapture::read(OutputArray image)
 {
     bool bSuccess = true;
     if (bSuccess == true)
@@ -156,7 +161,7 @@ bool cv::D8MCapture::open(uint32_t capture_base, const char *capture_ram_device)
         return false;
     }
     close(fd);
-
+    std::cout << "capture_sdram_base: " << capture_sdram_base << std::endl;
     if ((mem_fd = ::open("/dev/mem", (O_RDWR | O_SYNC))) == -1) {
         printf("ERROR: could not open \"/dev/mem\"...\n");
         return (1);
@@ -179,7 +184,9 @@ bool cv::D8MCapture::open(uint32_t capture_base, const char *capture_ram_device)
 
     capture_controller = (uint32_t*) ((uint8_t*) h2f_lw_virtual_base
             + ((0xff200000 + capture_base) & HW_REGS_MASK));
-
+    //printf("capture_sdram1: %u, capture_sdram2: %u, capture_controller: %u", *capture_sdram1, *capture_sdram2, *capture_controller);
+    //printf("capture_controller: %u", *capture_controller);
+    std::cout << "capture_sdram1: " << capture_sdram1 << std::endl;
     IOWR(capture_controller, REG_MEM_ADDR, capture_sdram_base);
     start_capture();
 

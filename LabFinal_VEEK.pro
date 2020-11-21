@@ -22,3 +22,8 @@ HEADERS  += mainwindow.h \
     D8MCapture.h
 
 FORMS    += mainwindow.ui
+
+unix {
+        CONFIG += link_pkgconfig
+        PKGCONFIG += opencv
+}

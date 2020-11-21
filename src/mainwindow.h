@@ -30,6 +30,7 @@ private:
     const int size = 800 * 480 * 4;
 
     void nextFrame();
+    QImage Mat2QImage(Mat const& src);
 };
 
 #endif // MAINWINDOW_H

@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <unistd.h>
+#include <opencv2/opencv.hpp>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -15,10 +16,11 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
 
     cap = new D8MCapture(0x3b000, "/dev/f2h-dma-memory");
-    
+    image = (char*)malloc(size);
 
     qScene = new QGraphicsScene();
     connect(qScene, &QGraphicsScene::changed, this, &MainWindow::nextFrame);
+    ui->graphicsView->setScene(qScene);
 
     /*int dfd = open("img.bin", O_RDWR | O_CREAT, 0666);
     ftruncate(dfd, size);
@@ -26,21 +28,21 @@ MainWindow::MainWindow(QWidget *parent) :
     memcpy(dest, image, size);
     munmap(dest, size);
     ::close(dfd);*/
+
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+    delete cap;
     free(image);
 }
 
 void MainWindow::nextFrame() {
-    qDebug() << "next frame";
-
-    image = (char*)calloc(1, size);
-    cap->read(image);
-
-    QImage qImage(800, 480, QImage::Format_RGB32);
+    Mat src;
+    bool success = cap->read(src);
+    //printf("read success: %s\n", success ? "true" : "false");
+    /*QImage qImage(800, 480, QImage::Format_RGB32);
     QRgb pixel;
     
     int index = 0;
@@ -51,13 +53,18 @@ void MainWindow::nextFrame() {
         
             index += 4;
         }
-    }
-
-    free(image);
+    }*/
     
-    QPixmap qPixmap = QPixmap::fromImage(qImage);
+    QPixmap qPixmap = QPixmap::fromImage(Mat2QImage(src));
 
     qScene->clear();
     qScene->addPixmap(qPixmap);
-    ui->graphicsView->setScene(qScene);
+}
+
+QImage MainWindow::Mat2QImage(Mat const& src) {
+    Mat temp;
+    cvtColor(src, temp, CV_BGR2RGB);
+    QImage dest((const uchar *) temp.data, temp.cols, temp.rows, temp.step, QImage::Format_RGB888);
+    dest.bits();
+    return dest;
 }
