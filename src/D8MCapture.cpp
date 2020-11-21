@@ -19,19 +19,19 @@ using namespace cv;
 #define IORD(base, index)                   (*(((uint32_t *)base)+index))
 #define IOWR(base, index, data)             (*(((uint32_t *)base)+index) = data)
 
-#define REG_CONTROL			0
-#define REG_STATUS			1
-#define REG_MEM_ADDR			2
-#define REG_FRAME_DIM			3
-#define REG_DETECTED_FRAME_DIM		4
+#define REG_CONTROL			        0
+#define REG_STATUS			        1
+#define REG_MEM_ADDR			    2
+#define REG_FRAME_DIM			    3
+#define REG_DETECTED_FRAME_DIM	    4
 
 // bit mask for CONTROL
-#define CONTROL_CAPTURE_BIT		0x01
+#define CONTROL_CAPTURE_BIT		    0x01
 #define CONTROL_DUMMY_DATA_BIT		0x02
 #define CONTROL_AUTO_FRAME_DIM_BIT	0x04
 
 // bit mask for STATUS
-#define STATUS_DONE_BIT			0x01
+#define STATUS_DONE_BIT			    0x01
 #define STATUS_FIFO_FULL_BIT		0x02
 #define STATUS_INVALID_FRAME_BIT	0x04
 

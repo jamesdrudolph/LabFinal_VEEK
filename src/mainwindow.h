@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QGraphicsScene>
+#include <QUdpSocket>
 #include <QMainWindow>
 
 #include "D8MCapture.h"
@@ -26,11 +27,17 @@ private:
     Ui::MainWindow *ui;
     QGraphicsScene *qScene;
     D8MCapture *cap;
-    char *image = NULL;
-    const int size = 800 * 480 * 4;
+    int brightnessAdjust = 0;
+    int contrastAdjust = 0;
 
     void nextFrame();
     QImage Mat2QImage(Mat const& src);
+    uchar truncate(uchar value, int adjust); 
+
+    QUdpSocket *udpSocket = nullptr;
+    void initSocket();
+    void readPendingDatagrams();
+    void processDatagram(QByteArray datagram);
 };
 
 #endif // MAINWINDOW_H

@@ -14,28 +14,20 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    
+    initSocket();
 
     cap = new D8MCapture(0x3b000, "/dev/f2h-dma-memory");
-    image = (char*)malloc(size);
 
     qScene = new QGraphicsScene();
     connect(qScene, &QGraphicsScene::changed, this, &MainWindow::nextFrame);
     ui->graphicsView->setScene(qScene);
-
-    /*int dfd = open("img.bin", O_RDWR | O_CREAT, 0666);
-    ftruncate(dfd, size);
-    char *dest = (char *)mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, dfd, 0);
-    memcpy(dest, image, size);
-    munmap(dest, size);
-    ::close(dfd);*/
-
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
     delete cap;
-    free(image);
 }
 
 void MainWindow::nextFrame() {
@@ -64,7 +56,58 @@ void MainWindow::nextFrame() {
 QImage MainWindow::Mat2QImage(Mat const& src) {
     Mat temp;
     cvtColor(src, temp, CV_BGR2RGB);
+
+    if (brightnessAdjust != 0) {
+        for (int i = 0; i < 800 * 480 * 3; i++) {
+            temp.data[i] = truncate(temp.data[i], brightnessAdjust);
+        }
+    }
+    
     QImage dest((const uchar *) temp.data, temp.cols, temp.rows, temp.step, QImage::Format_RGB888);
     dest.bits();
     return dest;
+}
+
+uchar MainWindow::truncate(uchar value, int adjust) {
+    int adjusted = (int)value + adjust;
+    
+    if (adjusted > 255) return 255;
+    else if (adjusted < 0) return 0;
+    return (uchar)adjusted;
+}
+
+//refactor everything below this to a server class later for reuse in b/c
+void MainWindow::initSocket() {
+    udpSocket = new QUdpSocket(this);
+    udpSocket->bind(QHostAddress::AnyIPv4, 420);
+
+    connect(udpSocket, &QUdpSocket::readyRead, this, &MainWindow::readPendingDatagrams);
+}
+
+void MainWindow::readPendingDatagrams() {
+    while (udpSocket->hasPendingDatagrams()) {
+        QByteArray datagram;
+        datagram.resize(udpSocket->pendingDatagramSize());
+
+        QHostAddress sender;
+        quint16 senderPort;
+
+        udpSocket->readDatagram(datagram.data(), datagram.size(), &sender, &senderPort);
+        processDatagram(datagram);
+    }
+}
+
+void MainWindow::processDatagram(QByteArray datagram) {
+    if (datagram.data() == QStringLiteral("TOGGLE_OVERLAY")) {
+        qDebug() << "received TOGGLE_OVERLAY";
+        //toggleOverlay();
+    } else if (datagram.startsWith("BRIGHTNESS")) {
+        qDebug() << "received BRIGHTNESS";
+        brightnessAdjust = std::stoi(datagram.split(':')[1].data());
+    } else if (datagram.startsWith("CONTRAST")) {
+        qDebug() << "received CONTRAST";
+        contrastAdjust = std::stoi(datagram.split(':')[1].data());
+    } else {
+        qDebug() << datagram;
+    }
 }
