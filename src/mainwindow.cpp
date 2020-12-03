@@ -29,7 +29,20 @@ MainWindow::~MainWindow()
     delete ui;
     delete cap;
 }
+void MainWindow::prepOverlay()
+{
+	overlay = QImage::fromData(imageData);
+    overlay = overlay.convertToFormat(QImage::Format_ARGB32);
 
+    for (int i = 0; i < overlay.height(); i++) {
+        for (int j = 0; j < overlay.width(); j++) {
+            if (overlay.pixel(i, j) == 0xffffffff) {
+                overlay.setPixel(i, j, 0x00000000);
+            }
+        }
+    }
+
+}
 void MainWindow::nextFrame() {
     Mat src;
     bool success = cap->read(src);
@@ -48,9 +61,14 @@ void MainWindow::nextFrame() {
     }*/
     
     QPixmap qPixmap = QPixmap::fromImage(Mat2QImage(src));
-
     qScene->clear();
     qScene->addPixmap(qPixmap);
+    if(! overlay.isNull())
+    {
+    	QPixmap pixmapOverlay = QPixmap::fromImage(overlay);
+    	qScene->addPixmap(pixmapOverlay);
+    }
+    
 }
 
 QImage MainWindow::Mat2QImage(Mat const& src) {
@@ -67,6 +85,7 @@ QImage MainWindow::Mat2QImage(Mat const& src) {
     temp.convertTo(newImage, -1, contrastAdjust, brightnessAdjust);
     QImage dest((const uchar *) newImage.data, newImage.cols, newImage.rows, newImage.step, QImage::Format_RGB888);
     dest.bits();
+
     return dest;
 }
 
@@ -103,13 +122,33 @@ void MainWindow::processDatagram(QByteArray datagram) {
     if (datagram.data() == QStringLiteral("TOGGLE_OVERLAY")) {
         qDebug() << "received TOGGLE_OVERLAY";
         //toggleOverlay();
-    } else if (datagram.startsWith("BRIGHTNESS")) {
+    } 
+    else if(datagram.data() == QStringLiteral("START_IMAGE_SEND"))
+    {
+    	qDebug() << "START_IMAGE_SEND";
+    	imageData.clear();
+    	receivingImage = true;
+    } 
+    else if(datagram.data() == QStringLiteral("END_IMAGE_SEND"))
+    {
+    	receivingImage = false;
+    	qDebug() << "END_IMAGE_SEND";
+    	prepOverlay();
+    }
+    else if (receivingImage)
+    {
+    	qDebug() << "RECEIVING_IMAGE_SEND";
+        imageData.append(datagram);
+    }
+    else if (datagram.startsWith("BRIGHTNESS")) {
         qDebug() << "received BRIGHTNESS";
         brightnessAdjust = std::stoi(datagram.split(':')[1].data());
-    } else if (datagram.startsWith("CONTRAST")) {
+    } 
+    else if (datagram.startsWith("CONTRAST")) {
         qDebug() << "received CONTRAST";
         contrastAdjust = std::stoi(datagram.split(':')[1].data());
-    } else {
+    } 
+    else {
         qDebug() << datagram;
     }
 }

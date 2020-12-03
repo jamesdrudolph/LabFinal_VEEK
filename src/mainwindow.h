@@ -35,9 +35,14 @@ private:
     uchar truncate(uchar value, int adjust); 
 
     QUdpSocket *udpSocket = nullptr;
+    QByteArray imageData;
+    QImage overlay;
+
+    bool receivingImage = false;
     void initSocket();
     void readPendingDatagrams();
     void processDatagram(QByteArray datagram);
+    void prepOverlay();
 };
 
 #endif // MAINWINDOW_H
