@@ -14,14 +14,14 @@ TARGET = LabFinal_VEEK
 TEMPLATE = app
 
 
-SOURCES += main.cpp\
-        mainwindow.cpp \
-    D8MCapture.cpp
+SOURCES += src/main.cpp\
+        src/mainwindow.cpp \
+    src/D8MCapture.cpp
 
-HEADERS  += mainwindow.h \
-    D8MCapture.h
+HEADERS  += src/mainwindow.h \
+    src/D8MCapture.h
 
-FORMS    += mainwindow.ui
+FORMS    += src/mainwindow.ui
 
 unix {
         CONFIG += link_pkgconfig
