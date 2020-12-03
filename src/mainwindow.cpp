@@ -55,15 +55,17 @@ void MainWindow::nextFrame() {
 
 QImage MainWindow::Mat2QImage(Mat const& src) {
     Mat temp;
+    Mat newImage;
     cvtColor(src, temp, CV_BGR2RGB);
-
+    /*
     if (brightnessAdjust != 0) {
         for (int i = 0; i < 800 * 480 * 3; i++) {
             temp.data[i] = truncate(temp.data[i], brightnessAdjust);
         }
     }
-    
-    QImage dest((const uchar *) temp.data, temp.cols, temp.rows, temp.step, QImage::Format_RGB888);
+    */
+    temp.convertTo(newImage, -1, contrastAdjust, brightnessAdjust);
+    QImage dest((const uchar *) newImage.data, newImage.cols, newImage.rows, newImage.step, QImage::Format_RGB888);
     dest.bits();
     return dest;
 }
