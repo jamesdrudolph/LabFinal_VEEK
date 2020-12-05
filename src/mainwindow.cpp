@@ -31,7 +31,9 @@ MainWindow::~MainWindow()
 }
 void MainWindow::prepOverlay()
 {
-	overlay = QImage::fromData(imageData);
+    overlayEnabled = true;
+    
+    overlay = QImage::fromData(imageData);
     overlay = overlay.convertToFormat(QImage::Format_ARGB32);
 
     for (int i = 0; i < overlay.height(); i++) {
@@ -63,7 +65,7 @@ void MainWindow::nextFrame() {
     QPixmap qPixmap = QPixmap::fromImage(Mat2QImage(src));
     qScene->clear();
     qScene->addPixmap(qPixmap);
-    if(! overlay.isNull())
+    if(overlayEnabled && ! overlay.isNull())
     {
     	QPixmap pixmapOverlay = QPixmap::fromImage(overlay);
     	qScene->addPixmap(pixmapOverlay);
@@ -121,7 +123,7 @@ void MainWindow::readPendingDatagrams() {
 void MainWindow::processDatagram(QByteArray datagram) {
     if (datagram.data() == QStringLiteral("TOGGLE_OVERLAY")) {
         qDebug() << "received TOGGLE_OVERLAY";
-        //toggleOverlay();
+        overlayEnabled = !overlayEnabled;
     } 
     else if(datagram.data() == QStringLiteral("START_IMAGE_SEND"))
     {

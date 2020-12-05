@@ -27,8 +27,9 @@ private:
     Ui::MainWindow *ui;
     QGraphicsScene *qScene;
     D8MCapture *cap;
-    int brightnessAdjust = 0;
-    int contrastAdjust = 0;
+    int brightnessAdjust = 1;
+    int contrastAdjust = 1;
+    bool overlayEnabled = false;
 
     void nextFrame();
     QImage Mat2QImage(Mat const& src);
